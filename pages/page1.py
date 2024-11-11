@@ -3,18 +3,6 @@ import pg8000
 import pandas as pd
 import streamlit as st
 
-# Set a simple password
-PASSWORD = os.environ["APP_PASSWORD"]
-
-# Create a password input field in Streamlit
-password = st.text_input("Enter Password", type="password")
-if password != PASSWORD:
-    st.warning("Incorrect password")
-    st.stop()
-else:
-    st.success("Access granted!")
-
-
 # Function to establish a database connection
 def get_database_connection():
     db_connection = pg8000.connect(
@@ -48,11 +36,35 @@ def fetch_data_from_supabase():
     return data
 
 # Streamlit interface for displaying data
-st.title("View Exam Results Data")
+st.title("View and Filter Exam Results Data")
 
-# Fetch and display data from Supabase
+# Fetch data from Supabase
 data = fetch_data_from_supabase()
 
-# Display the data in a table format
-st.write("Exam Results Data:")
-st.dataframe(data)  # Interactive table for easier navigation
+# Sidebar filters
+st.sidebar.header("Filter Data")
+
+# Filter by 'Exam'
+exam_options = data['exam'].unique()
+selected_exam = st.sidebar.multiselect("Select Exam(s):", exam_options, default=exam_options)
+
+# Filter by 'Result'
+result_options = data['result'].unique()
+selected_result = st.sidebar.multiselect("Select Result(s):", result_options, default=result_options)
+
+# Filter by Date Range
+min_date = data['date'].min()
+max_date = data['date'].max()
+start_date, end_date = st.sidebar.date_input("Date Range:", [min_date, max_date])
+
+# Apply filters to the data
+filtered_data = data[
+    (data['exam'].isin(selected_exam)) &
+    (data['result'].isin(selected_result)) &
+    (data['date'] >= pd.to_datetime(start_date)) &
+    (data['date'] <= pd.to_datetime(end_date))
+]
+
+# Display the filtered data in a table format
+st.write("Filtered Exam Results Data:")
+st.dataframe(filtered_data)  # Interactive table
