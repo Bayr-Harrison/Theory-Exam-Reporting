@@ -33,7 +33,7 @@ def fetch_data_from_supabase():
     db_cursor = db_connection.cursor()
 
     # SQL query to select all data from the 'exam_results' table
-    db_query = "SELECT * FROM exam_results whhere date = '2024-11-07';"
+    db_query = "SELECT * FROM exam_results where date = '2024-11-07';"
     db_cursor.execute(db_query)
 
     # Fetch all rows and convert to a DataFrame
