@@ -18,7 +18,7 @@ else:
 
 
 # Function to query database and generate coversheets in a zip file
-def generate_coversheets_zip(curriculum, startdate, enddate):
+def generate_coversheets_zip(startdate, enddate):
     db_connection = pg8000.connect(
         database=os.environ["SUPABASE_DB_NAME"],
         user=os.environ["SUPABASE_USER"],
@@ -37,12 +37,14 @@ def generate_coversheets_zip(curriculum, startdate, enddate):
                     student_list.curriculum,
                     exam_results.session,
                     exam_results.exam,
+                    exam_results.score,
                     exam_results.result,
                     exam_results.date,
-                    exam_results.type
+                    exam_results.type,
+                    exam_results.attempt_index,
+                    exam_results.score_index
                     FROM exam_results 
                     JOIN student_list ON exam_results.nat_id = student_list.nat_id
-                    WHERE student_list.curriculum = '{curriculum}' 
                     AND exam_results.date >= '{startdate}' 
                     AND exam_results.date <= '{enddate}'
                     ORDER BY 
@@ -57,7 +59,7 @@ def generate_coversheets_zip(curriculum, startdate, enddate):
     db_connection.close()
 
     # Convert output to DataFrame for Excel export
-    col_names = ['Name', 'IATC ID', 'National ID', 'Class', 'Curriculum', 'Session', 'Exam', 'Result', 'Date', 'Exam Type']
+    col_names = ['Name', 'IATC ID', 'National ID', 'Class', 'Curriculum', 'Session', 'Exam', 'Score', 'Result', 'Date', 'Exam Type', 'Attempt Index', 'Score Index']
     df = pd.DataFrame(output_data, columns=col_names)
 
     # Create an in-memory ZIP file to store individual Excel files
@@ -70,17 +72,14 @@ def generate_coversheets_zip(curriculum, startdate, enddate):
 
         # Save Excel file in the zip
         excel_buffer.seek(0)
-        zip_file.writestr(f"Report ( {startdate} to {enddate} ).xlsx", excel_buffer.read())
+        zip_file.writestr(f"Theory Report ( {startdate} to {enddate} ).xlsx", excel_buffer.read())
 
     zip_buffer.seek(0)
     return zip_buffer
 
 # Streamlit interface
-st.title("Generate Theory Exam Pass/Fail Report by Faculty and Date Range")
-st.write("Select a Faculty and date range to generate an Excel Pass Fail Report within the specified period")
-
-# Curriculum selection
-curriculum = st.selectbox("Select Faculty:", ["EASA", "GACA", "UAS"])
+st.title("Generate Theory Exam Results Report")
+st.write("Select a date range to generate an Excel Theory Results Report")
 
 # Date input from user
 startdate = st.date_input("Select Start Date:")
@@ -95,15 +94,15 @@ if st.button("Generate Report"):
             st.write("Generating Report...")
 
             # Generate the zip file in memory
-            zip_file = generate_coversheets_zip(curriculum, startdate, enddate)
+            zip_file = generate_coversheets_zip(startdate, enddate)
 
             # Download button for the zip file
             st.download_button(
                 label="Download Report",
                 data=zip_file,
-                file_name="Pass_Fail_Report.zip",
+                file_name="Theory_Report.zip",
                 mime="application/zip"
             )
-            st.success("Pass Fail Report zip generated successfully!")
+            st.success("Report zip generated successfully!")
         except Exception as e:
             st.error(f"An error occurred: {e}")
