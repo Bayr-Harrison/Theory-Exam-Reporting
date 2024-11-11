@@ -41,6 +41,10 @@ st.title("View and Filter Exam Results Data")
 # Fetch data from Supabase
 data = fetch_data_from_supabase()
 
+# Ensure that the 'date' column is in datetime format
+data['date'] = pd.to_datetime(data['date'], errors='coerce')
+
+
 # Sidebar filters
 st.sidebar.header("Filter Data")
 
